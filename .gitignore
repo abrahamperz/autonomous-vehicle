@@ -1,1 +1,38 @@
+# Catkin build artifacts
 /CMakeLists.txt
+build/
+devel/
+logs/
+install/
+
+# Pesos de redes neuronales (archivos grandes)
+*.weights
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# ROS bags (pueden ser muy grandes)
+*.bag
+
+# Compiled objects
+*.o
+*.so
+*.a
+
+# Darknet build artifacts
+ros_yolov3/libdarknet/obj/
+ros_yolov3/libdarknet/backup/
+ros_yolov3/libdarknet/results/
