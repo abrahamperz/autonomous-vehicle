@@ -1,126 +1,126 @@
-# Configuracion de Hardware
+# Hardware Configuration
 
-## Sensores y Dispositivos
+## Sensors and Devices
 
-### Camara Estereo ZED
+### ZED Stereo Camera
 
-La camara ZED proporciona imagenes RGB y mapas de profundidad para la percepcion del entorno.
+The ZED camera provides RGB images and depth maps for environment perception.
 
-| Parametro | Valor |
+| Parameter | Value |
 |-----------|-------|
-| Modelo | ZED (Stereolabs) |
+| Model | ZED (Stereolabs) |
 | SDK | ZED SDK 2.x |
-| Resolucion | Configurable (VGA por defecto para rendimiento) |
-| Datos | RGB + Mapa de profundidad estereo |
+| Resolution | Configurable (VGA by default for performance) |
+| Data | RGB + stereo depth map |
 
-**Montaje:** Frontal, centrada en el techo del vehiculo.
+**Mounting:** Front, centered on the vehicle roof.
 
-**Topics ROS:**
-- `/zed/left/image_rect_color` - Imagen rectificada izquierda
-- `/zed/rgb/image_raw_color` - Imagen RGB sin procesar
+**ROS Topics:**
+- `/zed/left/image_rect_color` - Left rectified image
+- `/zed/rgb/image_raw_color` - Raw RGB image
 
 ### LiDAR Lite v3
 
-Sensor de distancia de bajo costo para medicion puntual.
+Low-cost distance sensor for point measurement.
 
-| Parametro | Valor |
+| Parameter | Value |
 |-----------|-------|
-| Modelo | Garmin LiDAR Lite v3 |
-| Rango | 0 - 40 metros |
-| Precision | +/- 2.5 cm |
-| Interfaz | I2C |
-| Direccion I2C | `0x62` |
-| Bus I2C | 0 |
+| Model | Garmin LiDAR Lite v3 |
+| Range | 0 - 40 meters |
+| Accuracy | +/- 2.5 cm |
+| Interface | I2C |
+| I2C Address | `0x62` |
+| I2C Bus | 0 |
 
-**Topic ROS:** `/I2C/LidarLite_data` (Int64, distancia en cm)
+**ROS Topic:** `/I2C/LidarLite_data` (Int64, distance in cm)
 
-### Microcontrolador NXP S32K148
+### NXP S32K148 Microcontroller
 
-Controlador de bajo nivel que recibe comandos de ROS y actua sobre el motor, la direccion y los frenos.
+Low-level controller that receives commands from ROS and acts on the motor, steering, and brakes.
 
-| Parametro | Valor |
+| Parameter | Value |
 |-----------|-------|
-| Modelo | NXP S32K148 |
-| Interfaz | I2C |
-| Direccion I2C | `0x1D` |
-| Bus I2C | 0 |
+| Model | NXP S32K148 |
+| Interface | I2C |
+| I2C Address | `0x1D` |
+| I2C Bus | 0 |
 
-**Comandos que recibe:**
+**Commands it receives:**
 
-| Indice | Parametro | Rango |
+| Index | Parameter | Range |
 |--------|-----------|-------|
-| 0 | Angulo de direccion | Variable |
-| 1 | Aceleracion | 0.0 - 1.0 |
-| 2 | Freno | 0.0 - 1.0 |
+| 0 | Steering angle | Variable |
+| 1 | Throttle | 0.0 - 1.0 |
+| 2 | Brake | 0.0 - 1.0 |
 
-## Diagrama de Conexion I2C
+## I2C Connection Diagram
 
 ```
-Computadora (Jetson / PC)
+Computer (Jetson / PC)
     |
     +-- I2C Bus 0
     |     |
-    |     +-- [0x1D] NXP S32K148 (Control del vehiculo)
+    |     +-- [0x1D] NXP S32K148 (Vehicle control)
     |     |
-    |     +-- [0x62] LiDAR Lite v3 (Sensor de distancia)
+    |     +-- [0x62] LiDAR Lite v3 (Distance sensor)
     |
     +-- I2C Bus 1
           |
-          +-- [0x1D] IMU / Acelerometro
+          +-- [0x1D] IMU / Accelerometer
 ```
 
 ## GPU
 
-La deteccion de objetos YOLOv3 requiere una GPU NVIDIA con soporte CUDA.
+YOLOv3 object detection requires an NVIDIA GPU with CUDA support.
 
-| Requisito | Minimo |
+| Requirement | Minimum |
 |-----------|--------|
 | CUDA Compute Capability | 3.0+ |
-| VRAM | 2 GB (YOLOv3-tiny), 4 GB (YOLOv3 completo) |
+| VRAM | 2 GB (YOLOv3-tiny), 4 GB (full YOLOv3) |
 | CUDA | 9.1+ |
 | cuDNN | 5 - 7 |
 
-**Plataformas probadas:**
+**Tested platforms:**
 - NVIDIA Jetson TX2
-- PC con GPU NVIDIA dedicada
+- PC with dedicated NVIDIA GPU
 
-## Notas de Integracion
+## Integration Notes
 
-### Permisos I2C
+### I2C Permissions
 
-En Linux, el acceso a los buses I2C requiere permisos. Para evitar ejecutar como root:
+On Linux, accessing the I2C buses requires permissions. To avoid running as root:
 
 ```bash
-# Agregar tu usuario al grupo i2c
+# Add your user to the i2c group
 sudo usermod -aG i2c $USER
 
-# Crear regla udev si es necesario
+# Create a udev rule if needed
 echo 'SUBSYSTEM=="i2c-dev", MODE="0666"' | sudo tee /etc/udev/rules.d/99-i2c.rules
 sudo udevadm control --reload-rules
 ```
 
-### Verificar dispositivos I2C
+### Verify I2C Devices
 
 ```bash
-# Listar buses I2C disponibles
+# List available I2C buses
 ls /dev/i2c-*
 
-# Escanear dispositivos en el bus 0
+# Scan devices on bus 0
 sudo i2cdetect -y 0
 
-# Debe mostrar:
+# Should show:
 #   0x1D -> NXP S32K148
 #   0x62 -> LiDAR Lite v3
 ```
 
-### Camara ZED
+### ZED Camera
 
-La camara ZED se conecta via USB 3.0. Verificar conexion:
+The ZED camera connects via USB 3.0. Verify the connection:
 
 ```bash
-# Listar dispositivos de video
+# List video devices
 ls /dev/video*
 
-# Probar con el visor de ZED
+# Test with the ZED viewer
 /usr/local/zed/tools/ZED_Explorer
 ```

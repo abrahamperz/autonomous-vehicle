@@ -1,19 +1,31 @@
 # iDrive - Autonomous SUV Platform
 
-**Plataforma de conduccion autonoma basada en ROS para un SUV, desarrollada por estudiantes del Tecnologico de Monterrey Campus Guadalajara.**
+**ROS-based autonomous driving platform for an SUV, developed by students at Tecnologico de Monterrey, Guadalajara Campus.**
+
+### Video Demo
+
+[![Watch demo video](https://img.shields.io/badge/Video_Demo-Google_Drive-red?logo=googledrive&logoColor=white)](https://drive.google.com/file/d/1HUaLQ2Hwt-5Ln_VqVuKjchc53ep7Aygt/view?usp=drive_link)
+
+> [Watch the autonomous vehicle demo video](https://drive.google.com/file/d/1HUaLQ2Hwt-5Ln_VqVuKjchc53ep7Aygt/view?usp=drive_link)
+
+### In the news
+
+[Mechatronics students at Tec work to create autonomous mobility](https://conecta.tec.mx/es/noticias/guadalajara/investigacion/mecatronicos-del-tec-trabajan-para-crear-movilidad-autonoma) — Tec Review / Conecta Tec.
+
+The project is developed by Mechatronics students at Tecnologico de Monterrey, Guadalajara Campus, within the **Center for the Car of the Future**, on a **2002 Jeep Grand Cherokee** (donated by NXP). The team built its own electronic steering system (gearbox), electronic throttle and brake control, and computer vision for lane following. All modifications are **minimally invasive**, which allows the vehicle to be returned to its original state. The goal is to build a smart-mobility lab that integrates mechanics, electronics, programming, and artificial intelligence.
 
 ---
 
-## Descripcion General
+## Overview
 
-iDrive es un sistema modular de conduccion autonoma que integra multiples sensores (camara estereo ZED, LiDAR, microcontrolador NXP) con algoritmos de percepcion, planificacion y control. El vehiculo es capaz de:
+iDrive is a modular autonomous driving system that integrates multiple sensors (ZED stereo camera, LiDAR, NXP microcontroller) with perception, planning, and control algorithms. The vehicle is capable of:
 
-- **Seguimiento de carril** mediante deteccion de lineas con vision por computadora
-- **Deteccion de objetos** en tiempo real con YOLOv3 acelerado por GPU
-- **Medicion de distancia** con sensor LiDAR Lite v3
-- **Control autonomo** del volante, aceleracion y frenado via interfaz I2C
+- **Lane following** through computer-vision line detection
+- **Real-time object detection** with GPU-accelerated YOLOv3
+- **Distance measurement** with a LiDAR Lite v3 sensor
+- **Autonomous control** of steering, throttle, and braking via the I2C interface
 
-## Arquitectura del Sistema
+## System Architecture
 
 ```
 ZED Stereo Camera
@@ -35,88 +47,106 @@ ZED Stereo Camera
 [NXP Communication]
        |
        v
-  Actuadores del Vehiculo
+  Vehicle Actuators
 ```
 
-## Stack Tecnologico
+### Hardware Architecture
 
-| Componente | Tecnologia |
+System layout across three layers: perception (ROS + NVIDIA Jetson TX2 + ZED stereo camera), electronic control (NXP S32K148EVB microcontroller and motor driver), and vehicle (steering wheel, brake, and throttle actuated through OBD II).
+
+![System hardware architecture](docs/images/system-architecture.png)
+
+## Technology Stack
+
+| Component | Technology |
 |-----------|------------|
 | Middleware | ROS (Robot Operating System) |
 | Build System | catkin |
-| Percepcion | YOLOv3 (Darknet), OpenCV |
+| Perception | YOLOv3 (Darknet), OpenCV |
 | GPU | CUDA + cuDNN |
-| Camara | ZED SDK |
-| Lenguajes | C++ (modulos core), Python (deteccion de carril) |
+| Camera | ZED SDK |
+| Languages | C++ (core modules), Python (lane detection) |
 | Hardware | NXP S32K148, LiDAR Lite v3 |
 
-## Estructura del Proyecto
+## Electronic Steering
+
+Steering is actuated by a gearbox coupled to the steering wheel and driven by a motor with an encoder. The design is **minimally invasive**: it mounts on the original steering column without permanently modifying it.
+
+![Steering wheel actuation mechanism](docs/images/steering-mechanism.png)
+
+### Steering motor control results
+
+Position tracking of the steering motor against a step reference, comparing the **real** system to the **simulation**. The controller tracks the reference with low steady-state error across the full operating range.
+
+![Steering motor results: real vs. simulation vs. reference](docs/images/steering-motor-results.png)
+
+## Project Structure
 
 ```
 iDrive/
-  jeep_master_node/     # Nodo maestro - configuraciones de lanzamiento
-  jeep_msgs/            # Mensajes ROS personalizados
-  lane_detector/        # Subsistema de deteccion de carril (Python)
-  ros_yolov3/           # Deteccion de objetos YOLOv3 (C++)
-  navigation_control/   # Logica de decision y control (C++)
-  nxp_communication/    # Interfaz con el microcontrolador NXP (C++)
-  lidarlite_node/       # Sensor LiDAR Lite v3 (C++)
-  vga_zed_wrapper/      # Wrapper de camara ZED
-  testing/              # Scripts de prueba y utilidades
-  docs/                 # Documentacion detallada
+  jeep_master_node/     # Master node - launch configurations
+  jeep_msgs/            # Custom ROS messages
+  lane_detector/        # Lane detection subsystem (Python)
+  ros_yolov3/           # YOLOv3 object detection (C++)
+  navigation_control/   # Decision and control logic (C++)
+  nxp_communication/    # Interface with the NXP microcontroller (C++)
+  lidarlite_node/       # LiDAR Lite v3 sensor (C++)
+  vga_zed_wrapper/      # ZED camera wrapper
+  testing/              # Test scripts and utilities
+  docs/                 # Detailed documentation
 ```
 
-## Inicio Rapido
+## Quick Start
 
-### Prerequisitos
+### Prerequisites
 
-- Ubuntu 16.04+ con ROS Kinetic (o superior)
-- NVIDIA GPU con CUDA 9.1+ y cuDNN
+- Ubuntu 16.04+ with ROS Kinetic (or newer)
+- NVIDIA GPU with CUDA 9.1+ and cuDNN
 - ZED SDK 2.x
 - OpenCV 2.4.13 - 3.4.0
 
-### Compilacion
+### Build
 
 ```bash
-# Clonar el repositorio en tu workspace de catkin
+# Clone the repository into your catkin workspace
 cd ~/catkin_ws/src
-git clone <url-del-repositorio> iDrive
+git clone <repository-url> iDrive
 
-# Compilar
+# Build
 cd ~/catkin_ws
 catkin_make
 
-# Cargar el entorno
+# Source the environment
 source devel/setup.bash
 ```
 
-### Ejecucion
+### Run
 
 ```bash
-# Modo completo: deteccion de carril + navegacion + control del vehiculo
+# Full mode: lane detection + navigation + vehicle control
 roslaunch jeep_master_node jeep_master_node_lane.launch
 
-# Modo YOLO: deteccion de objetos + navegacion + control
+# YOLO mode: object detection + navigation + control
 roslaunch jeep_master_node jeep_master_node_yolo.launch
 
-# Modo NXP: solo comunicacion con el controlador
+# NXP mode: controller communication only
 roslaunch jeep_master_node jeep_master_node_nxp.launch
 ```
 
-## Documentacion
+## Documentation
 
-| Documento | Descripcion |
+| Document | Description |
 |-----------|-------------|
-| [Arquitectura](docs/ARCHITECTURE.md) | Flujo de datos, diagramas y comunicacion entre nodos |
-| [Modulos](docs/MODULES.md) | Descripcion detallada de cada paquete ROS |
-| [Instalacion](docs/INSTALLATION.md) | Guia completa de instalacion y dependencias |
-| [Hardware](docs/HARDWARE.md) | Configuracion de sensores y dispositivos I2C |
-| [Topics ROS](docs/ROS_TOPICS.md) | Referencia completa de topics publicados y suscritos |
+| [Architecture](docs/ARCHITECTURE.md) | Data flow, diagrams, and inter-node communication |
+| [Modules](docs/MODULES.md) | Detailed description of each ROS package |
+| [Installation](docs/INSTALLATION.md) | Complete installation and dependency guide |
+| [Hardware](docs/HARDWARE.md) | Sensor and I2C device configuration |
+| [ROS Topics](docs/ROS_TOPICS.md) | Full reference of published and subscribed topics |
 
-## Equipo
+## Team
 
-Desarrollado por estudiantes del **Tecnologico de Monterrey Campus Guadalajara**.
+Developed by students at **Tecnologico de Monterrey, Guadalajara Campus**.
 
-## Licencia
+## License
 
-Proyecto academico - Tecnologico de Monterrey.
+Academic project - Tecnologico de Monterrey.

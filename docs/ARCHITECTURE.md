@@ -1,8 +1,8 @@
-# Arquitectura del Sistema
+# System Architecture
 
-## Diagrama de Flujo de Datos
+## Data Flow Diagram
 
-El sistema sigue una arquitectura de pipeline clasica: **Percepcion -> Decision -> Actuacion**.
+The system follows a classic pipeline architecture: **Perception -> Decision -> Actuation**.
 
 ```
 +------------------+
@@ -11,7 +11,7 @@ El sistema sigue una arquitectura de pipeline clasica: **Percepcion -> Decision 
          |
          v
 +------------------+
-| vga_zed_wrapper  |  Publica imagenes en topics ROS
+| vga_zed_wrapper  |  Publishes images on ROS topics
 +--------+---------+
          |
     +----+----+
@@ -30,65 +30,65 @@ El sistema sigue una arquitectura de pipeline clasica: **Percepcion -> Decision 
             |
             v
   +-------------------+
-  | Navigation Control|  Controlador de modo deslizante
+  | Navigation Control|  Sliding mode controller
   +--------+----------+
            |
            | /I2C/nxp_communication
            v
   +-------------------+
-  | NXP Communication |  Interfaz I2C con el vehiculo
+  | NXP Communication |  I2C interface with the vehicle
   +--------+----------+
            |
            v
   +-------------------+
-  |  Actuadores del   |
-  |  Vehiculo (Motor, |
-  |  Direccion, Freno)|
+  |  Vehicle          |
+  |  Actuators (Motor,|
+  |  Steering, Brake) |
   +-------------------+
 
-  [Opcional]
+  [Optional]
   +-------------------+
-  | LiDAR Lite v3     |  Sensor de distancia independiente
+  | LiDAR Lite v3     |  Standalone distance sensor
   +-------------------+
 ```
 
-## Modos de Operacion
+## Operating Modes
 
-El sistema ofrece tres configuraciones de lanzamiento, definidas en `jeep_master_node/launch/`:
+The system offers three launch configurations, defined in `jeep_master_node/launch/`:
 
-### 1. Modo Seguimiento de Carril
+### 1. Lane Following Mode
 
 ```
 jeep_master_node_lane.launch
 ```
 
-Lanza: `lane_detector` -> `navigation_control` -> `nxp_communication`
+Launches: `lane_detector` -> `navigation_control` -> `nxp_communication`
 
-Usado para seguir marcas de carril en pistas de prueba. Detecta lineas rojas y azules mediante umbralizacion HSV.
+Used to follow lane markings on test tracks. Detects red and blue lines through HSV thresholding.
 
-### 2. Modo Deteccion de Objetos
+### 2. Object Detection Mode
 
 ```
 jeep_master_node_yolo.launch
 ```
 
-Lanza: `ros_yolov3` -> `navigation_control` -> `nxp_communication`
+Launches: `ros_yolov3` -> `navigation_control` -> `nxp_communication`
 
-Usado para deteccion y evasion de obstaculos. Detecta personas, autos y otros objetos con profundidad estereo.
+Used for obstacle detection and avoidance. Detects people, cars, and other objects with stereo depth.
 
-### 3. Modo Control Directo
+### 3. Direct Control Mode
 
 ```
 jeep_master_node_nxp.launch
 ```
 
-Lanza: `navigation_control` -> `nxp_communication`
+Launches: `navigation_control` -> `nxp_communication`
 
-Usado para pruebas manuales del controlador sin sensores de percepcion.
+Used for manual controller testing without perception sensors.
 
-## Comunicacion entre Nodos
+## Inter-Node Communication
 
-Todos los nodos se comunican a traves de **ROS Topics** usando el patron publicador/suscriptor:
+All nodes communicate through **ROS Topics** using the publisher/subscriber pattern:
 
 ```
 lane_detector ──/lane_detector/error_lat──> navigation_control
@@ -96,36 +96,36 @@ lane_detector ──/lane_detector/steer_angle─> navigation_control
 ros_yolov3 ────/yolo_detections_topic─────> navigation_control
 navigation_control ──/I2C/nxp_communication──> nxp_communication
 nxp_communication ──/I2C/receive──> (acknowledgment)
-lidarlite_node ──/I2C/LidarLite_data──> (disponible para suscripcion)
+lidarlite_node ──/I2C/LidarLite_data──> (available for subscription)
 ```
 
-## Algoritmos Clave
+## Key Algorithms
 
-### Controlador de Modo Deslizante (Navigation Control)
+### Sliding Mode Controller (Navigation Control)
 
-El nodo `navigation_control` implementa un controlador de modo deslizante para corregir el error lateral:
+The `navigation_control` node implements a sliding mode controller to correct the lateral error:
 
 ```
-sigma = C1 * error_lat + (error_lat - error_anterior) / Ts
-steering = f(sigma)  con saturacion
+sigma = C1 * error_lat + (error_lat - previous_error) / Ts
+steering = f(sigma)  with saturation
 ```
 
-La evasion de obstaculos usa una funcion gaussiana basada en la profundidad del objeto detectado. La aceleracion se calcula con una funcion exponencial que decrece conforme el objeto esta mas cerca.
+Obstacle avoidance uses a Gaussian function based on the depth of the detected object. Acceleration is computed with an exponential function that decreases as the object gets closer.
 
-### Pipeline de Deteccion de Carril
+### Lane Detection Pipeline
 
-1. Captura de frame desde la camara ZED
-2. Conversion BGR -> RGB -> HLS
-3. Filtro Sobel en X para deteccion de bordes
-4. Umbral en canal S para consistencia de color
-5. Transformacion de perspectiva (vista de pajaro)
-6. Algoritmo de ventana deslizante para encontrar limites de carril
-7. Ajuste de curvas polinomiales
-8. Calculo de curvatura y error lateral
+1. Frame capture from the ZED camera
+2. BGR -> RGB -> HLS conversion
+3. Sobel filter in X for edge detection
+4. S-channel threshold for color consistency
+5. Perspective transform (bird's-eye view)
+6. Sliding window algorithm to find lane boundaries
+7. Polynomial curve fitting
+8. Curvature and lateral error computation
 
-### Pipeline YOLOv3
+### YOLOv3 Pipeline
 
-1. Captura de frames con datos de profundidad (ZED estereo)
-2. Inferencia YOLOv3-tiny acelerada por CUDA
-3. Extraccion de bounding boxes, confianza y profundidad
-4. Publicacion como mensajes personalizados `jeep_msgs::yolov3_msg`
+1. Frame capture with depth data (ZED stereo)
+2. CUDA-accelerated YOLOv3-tiny inference
+3. Extraction of bounding boxes, confidence, and depth
+4. Publication as custom `jeep_msgs::yolov3_msg` messages

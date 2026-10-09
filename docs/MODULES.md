@@ -1,16 +1,16 @@
-# Modulos del Sistema
+# System Modules
 
-Cada modulo es un **paquete ROS independiente** con su propio `CMakeLists.txt` y `package.xml`.
+Each module is an **independent ROS package** with its own `CMakeLists.txt` and `package.xml`.
 
 ---
 
 ## jeep_master_node
 
-**Tipo:** Paquete de lanzamiento (sin codigo fuente)
+**Type:** Launch package (no source code)
 
-Contiene las configuraciones de `roslaunch` que orquestan el inicio del sistema completo. Define tres modos de operacion:
+Contains the `roslaunch` configurations that orchestrate startup of the full system. Defines three operating modes:
 
-| Launch File | Nodos que inicia |
+| Launch File | Nodes it starts |
 |-------------|-----------------|
 | `jeep_master_node_lane.launch` | lane_detector, navigation_control, nxp_communication |
 | `jeep_master_node_yolo.launch` | ros_yolov3, navigation_control, nxp_communication |
@@ -20,89 +20,89 @@ Contiene las configuraciones de `roslaunch` que orquestan el inicio del sistema 
 
 ## jeep_msgs
 
-**Tipo:** Paquete de mensajes
+**Type:** Message package
 
-Define los tipos de mensaje personalizados del proyecto.
+Defines the project's custom message types.
 
 ### yolov3_msg.msg
 
 ```
-string   name    # Nombre del objeto detectado (person, car, etc.)
-float32  depth   # Profundidad en metros desde la camara estereo
-float32  prob    # Probabilidad de deteccion (0.0 - 1.0)
+string   name    # Name of the detected object (person, car, etc.)
+float32  depth   # Depth in meters from the stereo camera
+float32  prob    # Detection probability (0.0 - 1.0)
 ```
 
-**Dependencias:** `std_msgs`
+**Dependencies:** `std_msgs`
 
 ---
 
 ## lane_detector
 
-**Tipo:** Modulo de percepcion (Python)
+**Type:** Perception module (Python)
 
-Detecta los limites del carril en imagenes de la camara ZED usando vision por computadora.
+Detects lane boundaries in ZED camera images using computer vision.
 
-### Archivos principales
+### Main files
 
-| Archivo | Funcion |
+| File | Function |
 |---------|---------|
-| `scripts/lane_detector_impl.py` | Nodo ROS principal. Pipeline completo de deteccion |
-| `scripts/camara_pista.py` | Deteccion de marcadores de carril (rojo/azul) por HSV |
-| `scripts/camara.py` | Interfaz general de camara |
-| `scripts/hsv.py` | Utilidades de espacio de color HSV |
-| `scripts/functions/utils.py` | Pipeline de imagen: perspectiva, ventana deslizante, Sobel |
+| `scripts/lane_detector_impl.py` | Main ROS node. Full detection pipeline |
+| `scripts/camara_pista.py` | Lane marker detection (red/blue) via HSV |
+| `scripts/camara.py` | General camera interface |
+| `scripts/hsv.py` | HSV color space utilities |
+| `scripts/functions/utils.py` | Image pipeline: perspective, sliding window, Sobel |
 
-### Parametros de Color
+### Color Parameters
 
-**Lineas rojas:**
-- HSV: `[0, 50, 50]` a `[12, 255, 255]` y `[160, 50, 50]` a `[188, 255, 255]`
+**Red lines:**
+- HSV: `[0, 50, 50]` to `[12, 255, 255]` and `[160, 50, 50]` to `[188, 255, 255]`
 
-**Lineas azules:**
-- HSV: `[94, 80, 2]` a `[126, 255, 255]`
+**Blue lines:**
+- HSV: `[94, 80, 2]` to `[126, 255, 255]`
 
-### Topics Publicados
+### Published Topics
 
-| Topic | Tipo | Descripcion |
+| Topic | Type | Description |
 |-------|------|-------------|
-| `/lane_detector/out_image` | Image | Imagen con overlay de carriles detectados |
-| `/lane_detector/warped_image` | Image | Vista de pajaro (perspectiva transformada) |
-| `/lane_detector/sliding_window_image` | Image | Visualizacion del algoritmo de ventana deslizante |
-| `/lane_detector/steer_angle` | Float32 | Angulo de direccion recomendado |
-| `/lane_detector/error_lat` | Float32 | Error lateral en pixeles |
+| `/lane_detector/out_image` | Image | Image with detected-lane overlay |
+| `/lane_detector/warped_image` | Image | Bird's-eye view (perspective transformed) |
+| `/lane_detector/sliding_window_image` | Image | Sliding-window algorithm visualization |
+| `/lane_detector/steer_angle` | Float32 | Recommended steering angle |
+| `/lane_detector/error_lat` | Float32 | Lateral error in pixels |
 
-### Configuracion
+### Configuration
 
-El archivo `config/zed_default.yaml` define los topics de entrada de la camara ZED.
+The `config/zed_default.yaml` file defines the ZED camera input topics.
 
 ---
 
 ## ros_yolov3
 
-**Tipo:** Modulo de percepcion (C++)
+**Type:** Perception module (C++)
 
-Deteccion de objetos en tiempo real usando YOLOv3-tiny con integracion de la camara ZED para obtener profundidad.
+Real-time object detection using YOLOv3-tiny with ZED camera integration for depth.
 
-### Archivo principal
+### Main file
 
-- `src/main.cpp` - Wrapper de Darknet con ZED SDK, procesamiento GPU
+- `src/main.cpp` - Darknet wrapper with ZED SDK, GPU processing
 
-### Funcionamiento
+### How it works
 
-1. Inicializa la red YOLOv3-tiny con pesos pre-entrenados (`yolov3-tiny.weights`)
-2. Captura frames de la camara ZED (RGB + mapa de profundidad)
-3. Ejecuta inferencia en GPU (CUDA)
-4. Extrae detecciones con bounding box, clase, confianza y profundidad
-5. Publica cada deteccion como `jeep_msgs::yolov3_msg`
+1. Initializes the YOLOv3-tiny network with pre-trained weights (`yolov3-tiny.weights`)
+2. Captures frames from the ZED camera (RGB + depth map)
+3. Runs inference on the GPU (CUDA)
+4. Extracts detections with bounding box, class, confidence, and depth
+5. Publishes each detection as `jeep_msgs::yolov3_msg`
 
-### Topics Publicados
+### Published Topics
 
-| Topic | Tipo | Descripcion |
+| Topic | Type | Description |
 |-------|------|-------------|
-| `/yolo_detections_topic` | jeep_msgs::yolov3_msg | Objetos detectados con profundidad |
+| `/yolo_detections_topic` | jeep_msgs::yolov3_msg | Detected objects with depth |
 
-### Dependencias Especiales
+### Special Dependencies
 
-- Darknet (incluido como `libdarknet/`)
+- Darknet (included as `libdarknet/`)
 - CUDA 9.1+
 - cuDNN
 - ZED SDK
@@ -111,66 +111,66 @@ Deteccion de objetos en tiempo real usando YOLOv3-tiny con integracion de la cam
 
 ## navigation_control
 
-**Tipo:** Modulo de decision y control (C++)
+**Type:** Decision and control module (C++)
 
-Recibe datos de percepcion (YOLO + carriles) y genera comandos de control para el vehiculo.
+Receives perception data (YOLO + lanes) and generates control commands for the vehicle.
 
-### Archivo principal
+### Main file
 
 - `src/navigation_control.cpp`
 
-### Logica de Control
+### Control Logic
 
-- **Direccion:** Controlador de modo deslizante que minimiza el error lateral
+- **Steering:** Sliding mode controller that minimizes lateral error
   - `sigma = C1 * error + delta_error / Ts`
-  - Saturacion para limitar el angulo maximo
-- **Evasion:** Funcion gaussiana sobre la profundidad del objeto mas cercano
-- **Aceleracion:** Funcion exponencial inversamente proporcional a la distancia del obstaculo
-- **Filtrado:** Filtro de mediana sobre 8 muestras de deteccion
-- **Conversion:** Pixeles a metros con factor `K = 0.0035`
+  - Saturation to limit the maximum angle
+- **Avoidance:** Gaussian function over the depth of the nearest object
+- **Throttle:** Exponential function inversely proportional to the obstacle distance
+- **Filtering:** Median filter over 8 detection samples
+- **Conversion:** Pixels to meters with factor `K = 0.0035`
 
-### Topics Suscritos
+### Subscribed Topics
 
-| Topic | Tipo | Fuente |
+| Topic | Type | Source |
 |-------|------|--------|
 | `/yolo_detections_topic` | jeep_msgs::yolov3_msg | ros_yolov3 |
 | `/lane_detector/error_lat` | Float32 | lane_detector |
 | `/lane_detector/steer_angle` | Float32 | lane_detector |
 
-### Topics Publicados
+### Published Topics
 
-| Topic | Tipo | Descripcion |
+| Topic | Type | Description |
 |-------|------|-------------|
-| `/I2C/nxp_communication` | Float32MultiArray | Array de 3 elementos: [angulo, aceleracion, freno] |
+| `/I2C/nxp_communication` | Float32MultiArray | 3-element array: [angle, throttle, brake] |
 
 ---
 
 ## nxp_communication
 
-**Tipo:** Modulo de actuacion (C++)
+**Type:** Actuation module (C++)
 
-Interfaz I2C con el microcontrolador NXP S32K148 que controla los actuadores fisicos del vehiculo.
+I2C interface with the NXP S32K148 microcontroller that controls the vehicle's physical actuators.
 
-### Archivo principal
+### Main file
 
 - `src/nxp_communication.cpp`
 
-### Funcionamiento
+### How it works
 
-1. Recibe comandos de `navigation_control` via topic
-2. Establece conexion I2C con el NXP (direccion `0x1D`, bus 0)
-3. Envia comandos de aceleracion, frenado y direccion
-4. Recibe confirmaciones del microcontrolador
+1. Receives commands from `navigation_control` via topic
+2. Establishes an I2C connection with the NXP (address `0x1D`, bus 0)
+3. Sends throttle, brake, and steering commands
+4. Receives acknowledgments from the microcontroller
 
-### Topics Suscritos
+### Subscribed Topics
 
-| Topic | Tipo |
+| Topic | Type |
 |-------|------|
 | `/I2C/nxp_communication` | Float32MultiArray |
 
-### Topics Publicados
+### Published Topics
 
-| Topic | Tipo |
+| Topic | Type |
 |-------|------|
 | `/I2C/receive` | String (acknowledgment) |
 
@@ -178,48 +178,48 @@ Interfaz I2C con el microcontrolador NXP S32K148 que controla los actuadores fis
 
 ## lidarlite_node
 
-**Tipo:** Modulo de sensor (C++)
+**Type:** Sensor module (C++)
 
-Interfaz I2C con el sensor LiDAR Lite v3 para medicion de distancia.
+I2C interface with the LiDAR Lite v3 sensor for distance measurement.
 
-### Archivo principal
+### Main file
 
 - `src/lidarlite_communication.cpp`
 
-### Funcionamiento
+### How it works
 
-1. Inicializa comunicacion I2C con el LiDAR (direccion `0x62`, bus 0)
-2. Lee mediciones de distancia en centimetros
-3. Publica datos en topic ROS
+1. Initializes I2C communication with the LiDAR (address `0x62`, bus 0)
+2. Reads distance measurements in centimeters
+3. Publishes the data on a ROS topic
 
-### Topics Publicados
+### Published Topics
 
-| Topic | Tipo | Descripcion |
+| Topic | Type | Description |
 |-------|------|-------------|
-| `/I2C/LidarLite_data` | Int64 | Distancia medida en centimetros |
+| `/I2C/LidarLite_data` | Int64 | Measured distance in centimeters |
 
 ---
 
 ## vga_zed_wrapper
 
-**Tipo:** Wrapper de camara (C++)
+**Type:** Camera wrapper (C++)
 
-Nodo que encapsula la camara ZED y publica sus imagenes en topics ROS estandar.
+Node that encapsulates the ZED camera and publishes its images on standard ROS topics.
 
-### Topics Publicados
+### Published Topics
 
-| Topic | Descripcion |
+| Topic | Description |
 |-------|-------------|
-| `/zed/left/image_rect_color` | Imagen rectificada de la camara izquierda |
-| `/zed/rgb/image_raw_color` | Imagen RGB sin procesar |
+| `/zed/left/image_rect_color` | Rectified image from the left camera |
+| `/zed/rgb/image_raw_color` | Raw RGB image |
 
 ---
 
 ## testing
 
-**Tipo:** Scripts de prueba y utilidades (Python)
+**Type:** Test scripts and utilities (Python)
 
-| Script | Funcion |
+| Script | Function |
 |--------|---------|
-| `scripts/lane_img_show.py` | Visualiza resultados de deteccion de carril |
-| `scripts/listener.py` | Escucha y muestra mensajes de topics ROS |
+| `scripts/lane_img_show.py` | Visualizes lane detection results |
+| `scripts/listener.py` | Listens to and prints ROS topic messages |

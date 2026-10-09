@@ -1,6 +1,6 @@
-# Referencia de Topics ROS
+# ROS Topics Reference
 
-## Mapa Completo de Topics
+## Complete Topic Map
 
 ```
 vga_zed_wrapper
@@ -33,78 +33,78 @@ lidarlite_node
   PUB -> /I2C/LidarLite_data           [std_msgs/Int64]
 ```
 
-## Detalle por Topic
+## Topic Details
 
-### Topics de Camara
+### Camera Topics
 
-| Topic | Tipo | Publicador | Descripcion |
+| Topic | Type | Publisher | Description |
 |-------|------|-----------|-------------|
-| `/zed/left/image_rect_color` | sensor_msgs/Image | vga_zed_wrapper | Imagen rectificada de la camara izquierda |
-| `/zed/rgb/image_raw_color` | sensor_msgs/Image | vga_zed_wrapper | Imagen RGB sin procesar |
+| `/zed/left/image_rect_color` | sensor_msgs/Image | vga_zed_wrapper | Rectified image from the left camera |
+| `/zed/rgb/image_raw_color` | sensor_msgs/Image | vga_zed_wrapper | Raw RGB image |
 
-### Topics de Percepcion
+### Perception Topics
 
-| Topic | Tipo | Publicador | Suscriptor |
+| Topic | Type | Publisher | Subscriber |
 |-------|------|-----------|------------|
 | `/yolo_detections_topic` | jeep_msgs/yolov3_msg | ros_yolov3 | navigation_control |
-| `/lane_detector/out_image` | sensor_msgs/Image | lane_detector | (visualizacion) |
-| `/lane_detector/warped_image` | sensor_msgs/Image | lane_detector | (visualizacion) |
-| `/lane_detector/sliding_window_image` | sensor_msgs/Image | lane_detector | (visualizacion) |
+| `/lane_detector/out_image` | sensor_msgs/Image | lane_detector | (visualization) |
+| `/lane_detector/warped_image` | sensor_msgs/Image | lane_detector | (visualization) |
+| `/lane_detector/sliding_window_image` | sensor_msgs/Image | lane_detector | (visualization) |
 | `/lane_detector/steer_angle` | std_msgs/Float32 | lane_detector | navigation_control |
 | `/lane_detector/error_lat` | std_msgs/Float32 | lane_detector | navigation_control |
 
-### Topics de Control
+### Control Topics
 
-| Topic | Tipo | Publicador | Suscriptor |
+| Topic | Type | Publisher | Subscriber |
 |-------|------|-----------|------------|
 | `/I2C/nxp_communication` | std_msgs/Float32MultiArray | navigation_control | nxp_communication |
 | `/I2C/receive` | std_msgs/String | nxp_communication | (acknowledgment) |
 
-### Topics de Sensores
+### Sensor Topics
 
-| Topic | Tipo | Publicador | Descripcion |
+| Topic | Type | Publisher | Description |
 |-------|------|-----------|-------------|
-| `/I2C/LidarLite_data` | std_msgs/Int64 | lidarlite_node | Distancia en centimetros |
+| `/I2C/LidarLite_data` | std_msgs/Int64 | lidarlite_node | Distance in centimeters |
 
-## Mensajes Personalizados
+## Custom Messages
 
 ### jeep_msgs/yolov3_msg
 
 ```
-string   name    # Clase del objeto: "person", "car", etc.
-float32  depth   # Distancia al objeto en metros (estereo ZED)
-float32  prob    # Confianza de deteccion (0.0 - 1.0)
+string   name    # Object class: "person", "car", etc.
+float32  depth   # Distance to the object in meters (ZED stereo)
+float32  prob    # Detection confidence (0.0 - 1.0)
 ```
 
-### Formato de Float32MultiArray (Control)
+### Float32MultiArray Format (Control)
 
-El array de control enviado a NXP tiene 3 elementos:
+The control array sent to the NXP has 3 elements:
 
 ```
-data[0] = angulo_de_direccion   # Angulo calculado por el controlador
-data[1] = aceleracion           # 0.0 (detenido) a 1.0 (maximo)
-data[2] = freno                 # 0.0 (sin freno) a 1.0 (frenado completo)
+data[0] = steering_angle   # Angle computed by the controller
+data[1] = throttle         # 0.0 (stopped) to 1.0 (maximum)
+data[2] = brake            # 0.0 (no brake) to 1.0 (full braking)
 ```
 
-## Comandos Utiles
+## Useful Commands
 
 ```bash
-# Listar todos los topics activos
+# List all active topics
 rostopic list
 
-# Ver mensajes en tiempo real
+# View messages in real time
 rostopic echo /yolo_detections_topic
 rostopic echo /lane_detector/error_lat
 rostopic echo /I2C/nxp_communication
 
-# Ver frecuencia de publicacion
+# View publishing rate
 rostopic hz /yolo_detections_topic
 rostopic hz /lane_detector/error_lat
 
-# Ver informacion de un topic
+# View topic information
 rostopic info /I2C/nxp_communication
 
-# Visualizar imagenes
+# Visualize images
 rosrun image_view image_view image:=/lane_detector/out_image
 rosrun image_view image_view image:=/lane_detector/warped_image
 ```
